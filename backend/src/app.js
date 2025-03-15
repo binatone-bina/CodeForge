@@ -9,6 +9,7 @@ const authRoutes = require('./routes/auth.routes');
 const safeRouteRoutes = require('./routes/safeRoute.routes');
 const fcmRoutes = require('./routes/fcm.routes'); // Import FCM route
 const liveLocationRoutes = require('./routes/liveLocation.routes'); // Import live location route
+const panicButtonRoutes = require('./routes/panicButton.routes'); // Import Panic Button route
 
 dotenv.config(); // Load environment variables
 
@@ -28,6 +29,7 @@ app.use('/auth', authRoutes);
 app.use('/safe-route', safeRouteRoutes);
 app.use('/send-notification', fcmRoutes); // Use FCM route
 app.use('/live-location', liveLocationRoutes); // Use live location routes
+app.use('/panic-button', panicButtonRoutes); // Use Panic Button routes
 
 // Error handling middleware
 app.use((err, req, res, next) => {
