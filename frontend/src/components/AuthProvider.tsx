@@ -1,11 +1,10 @@
-
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 interface AuthContextType {
   isAuthenticated: boolean;
   userName: string | null;
-  login: (name?: string) => void;
+  login: (token: string) => void;
   logout: () => void;
   requireAuth: () => boolean;
 }
@@ -20,41 +19,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userName, setUserName] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   useEffect(() => {
-    // Check if user is authenticated on mount
-    const authStatus = localStorage.getItem('isAuthenticated') === 'true';
-    const storedName = localStorage.getItem('userName');
-    
-    setIsAuthenticated(authStatus);
-    setUserName(storedName);
+    const token = localStorage.getItem('jwtToken');
+    if (token) {
+      setIsAuthenticated(true);
+      setUserName('User'); // Set a default user name or fetch it from the backend if needed
+    }
   }, []);
-  
-  // Check if current route requires authentication and redirect if needed
+
   useEffect(() => {
     if (!isAuthenticated && protectedRoutes.includes(location.pathname)) {
       navigate('/', { replace: true });
     }
   }, [isAuthenticated, location.pathname, navigate]);
-  
-  const login = (name?: string) => {
+
+  const login = (token: string) => {
+    localStorage.setItem('jwtToken', token);
     setIsAuthenticated(true);
-    localStorage.setItem('isAuthenticated', 'true');
-    
-    if (name) {
-      setUserName(name);
-      localStorage.setItem('userName', name);
-    }
+    setUserName('User'); // Set a default user name or fetch it from the backend if needed
   };
-  
+
   const logout = () => {
+    localStorage.removeItem('jwtToken');
     setIsAuthenticated(false);
     setUserName(null);
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('userName');
     navigate('/', { replace: true });
   };
-  
+
   const requireAuth = (): boolean => {
     if (!isAuthenticated) {
       navigate('/', { replace: true });
@@ -62,7 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     return true;
   };
-  
+
   return (
     <AuthContext.Provider value={{ isAuthenticated, userName, login, logout, requireAuth }}>
       {children}
@@ -72,10 +64,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
-  
   return context;
 };

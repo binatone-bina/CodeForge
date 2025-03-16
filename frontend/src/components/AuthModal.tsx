@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +6,7 @@ import { Shield, User, Lock, UserPlus, LogIn, Mail, UserCircle } from 'lucide-re
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/AuthProvider';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 type AuthMode = 'login' | 'register';
 
@@ -24,53 +24,50 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login', onSuccess }: AuthMo
   const [name, setName] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const { toast } = useToast();
   const { login } = useAuth();
   const navigate = useNavigate();
-  
+
   if (!isOpen) return null;
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       // Validation for registration
       if (mode === 'register') {
         if (password !== confirmPassword) {
           throw new Error("Passwords don't match");
         }
-        
+
         if (password.length < 6) {
           throw new Error("Password must be at least 6 characters");
         }
       }
-      
-      // This is a mock authentication - in a real app, this would connect to a backend
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Use AuthProvider's login function instead of directly manipulating localStorage
-      if (mode === 'register') {
-        login(name);
-      } else {
-        login();
-      }
-      
+
+      // Authenticate with backend
+      const response = await axios.post(`http://localhost:5000/auth/${mode}`, { email, password, name });
+      const { token } = response.data;
+
+      // Use AuthProvider's login function to store the token and update the state
+      login(token);
+
       toast({
         title: mode === 'login' ? "Welcome back!" : "Account created successfully!",
         description: "You are now signed in.",
       });
-      
+
       if (onSuccess) {
         onSuccess();
       }
-      
+
       onClose();
-      
+
       // Redirect to map page upon successful login
       navigate('/map');
-      
+
     } catch (error) {
       toast({
         title: "Authentication failed",
@@ -81,7 +78,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login', onSuccess }: AuthMo
       setIsLoading(false);
     }
   };
-  
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <div className="bg-background rounded-lg shadow-lg max-w-md w-full p-6 relative">
@@ -91,7 +88,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login', onSuccess }: AuthMo
         >
           &times;
         </button>
-        
+
         <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center mb-4 p-3 rounded-full bg-safety-100">
             <Shield className="w-6 h-6 text-safety-600" />
@@ -105,7 +102,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login', onSuccess }: AuthMo
               : 'Create an account to access safety maps and community support.'}
           </p>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           {mode === 'register' && (
             <div className="space-y-2">
@@ -124,7 +121,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login', onSuccess }: AuthMo
               </div>
             </div>
           )}
-          
+
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <div className="relative">
@@ -140,7 +137,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login', onSuccess }: AuthMo
               />
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
             <div className="relative">
@@ -156,7 +153,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login', onSuccess }: AuthMo
               />
             </div>
           </div>
-          
+
           {mode === 'register' && (
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">Confirm Password</Label>
@@ -174,7 +171,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login', onSuccess }: AuthMo
               </div>
             </div>
           )}
-          
+
           <Button 
             type="submit" 
             className="w-full" 
@@ -207,7 +204,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'login', onSuccess }: AuthMo
             )}
           </Button>
         </form>
-        
+
         <div className="mt-6 text-center">
           <button 
             onClick={() => setMode(mode === 'login' ? 'register' : 'login')}

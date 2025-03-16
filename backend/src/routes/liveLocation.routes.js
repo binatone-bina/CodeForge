@@ -27,4 +27,25 @@ router.post('/update-location', authenticateToken, async (req, res) => {
     }
 });
 
+// GET endpoint to fetch live locations
+router.get('/', authenticateToken, async (req, res) => {
+    try {
+        const snapshot = await admin.database().ref('locations').once('value');
+        const locations = [];
+        snapshot.forEach((childSnapshot) => {
+            const location = childSnapshot.val();
+            locations.push({
+                id: childSnapshot.key,
+                lat: location.latitude,
+                lng: location.longitude,
+            });
+        });
+
+        res.status(200).json({ locations });
+    } catch (error) {
+        console.error('Error fetching live locations:', error.message);
+        res.status(500).json({ error: 'Failed to fetch live locations.' });
+    }
+});
+
 module.exports = router;
